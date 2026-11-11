@@ -1,0 +1,187 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Explorador de Transacciones</title>
+<style>
+  :root { --bg:#f5f6fa; --card:#fff; --text:#1c2333; --muted:#667085; --line:#e4e7ec; --brand:#3b5bdb;
+          --ok:#2f9e44; --bad:#e03131; --warn:#f08c00; }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg:#14171f; --card:#1e232e; --text:#e8eaf0; --muted:#98a2b3; --line:#2f3646; --brand:#748ffc; }
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; background:var(--bg); color:var(--text); }
+  header { padding:16px 24px; background:var(--card); border-bottom:1px solid var(--line); display:flex; flex-wrap:wrap; gap:12px; align-items:center; justify-content:space-between; }
+  h1 { font-size:1.2rem; margin:0; }
+  main { max-width:1200px; margin:0 auto; padding:20px 24px 48px; }
+  .grid { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); margin-bottom:16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px; padding:14px 16px; }
+  .card .n { font-size:1.7rem; font-weight:700; }
+  .card .l { color:var(--muted); font-size:.82rem; }
+  .two { display:grid; gap:12px; grid-template-columns:repeat(auto-fit,minmax(320px,1fr)); margin-bottom:16px; }
+  h2 { font-size:1rem; margin:0 0 8px; }
+  table { width:100%; border-collapse:collapse; font-size:.9rem; }
+  th, td { text-align:left; padding:7px 8px; border-bottom:1px solid var(--line); vertical-align:top; }
+  th { color:var(--muted); font-weight:600; font-size:.78rem; text-transform:uppercase; letter-spacing:.03em; }
+  td.num, th.num { text-align:right; font-variant-numeric:tabular-nums; }
+  .wrap { overflow-x:auto; }
+  .tabs { display:flex; gap:8px; margin:8px 0 12px; }
+  .tabs a { padding:8px 14px; border-radius:8px; text-decoration:none; color:var(--text); border:1px solid var(--line); background:var(--card); }
+  .tabs a.active { background:var(--brand); color:#fff; border-color:var(--brand); }
+  form.filters { display:flex; flex-wrap:wrap; gap:10px; align-items:end; margin-bottom:12px; }
+  label { display:flex; flex-direction:column; font-size:.75rem; color:var(--muted); gap:3px; }
+  input, select, button, .btn { font:inherit; padding:6px 8px; border:1px solid var(--line); border-radius:6px; background:var(--card); color:var(--text); }
+  button, .btn { background:var(--brand); color:#fff; border-color:var(--brand); cursor:pointer; text-decoration:none; }
+  .btn.ghost { background:transparent; color:var(--text); border-color:var(--line); }
+  .badge { display:inline-block; padding:1px 8px; border-radius:99px; font-size:.75rem; font-weight:600; color:#fff; }
+  .SUCCESS { background:var(--ok); } .FAILED { background:var(--bad); } .PENDING { background:var(--warn); }
+  .err { background:#ffe3e3; color:#8a1c1c; padding:12px 16px; border-radius:8px; margin-bottom:16px; }
+  code, pre { font-family: ui-monospace, Consolas, monospace; font-size:.8rem; }
+  pre { margin:4px 0 0; white-space:pre-wrap; word-break:break-word; color:var(--muted); }
+  .code { font-family: ui-monospace, Consolas, monospace; font-size:.78rem; background:var(--line); padding:1px 6px; border-radius:4px; }
+  .muted { color:var(--muted); }
+</style>
+</head>
+<body>
+<header>
+  <h1>Explorador de Transacciones Multifuente</h1>
+  <form method="get" style="display:flex; gap:8px; align-items:center;">
+    <label style="flex-direction:row; align-items:center; gap:8px;">Dataset
+      <select name="dataset" onchange="this.form.submit()">
+        {% for d in datasets %}<option value="{{ d }}" {{ 'selected' if d == dataset }}>{{ d }}</option>{% endfor %}
+      </select>
+    </label>
+  </form>
+</header>
+
+<main>
+{% if error %}
+  <div class="err">{{ error }}</div>
+{% else %}
+  {% set m = metrics %}
+  <div class="grid">
+    <div class="card"><div class="n">{{ m.total }}</div><div class="l">Total procesadas</div></div>
+    <div class="card"><div class="n" style="color:var(--ok)">{{ m.valid }}</div><div class="l">Válidas ({{ m.valid_pct }}%)</div></div>
+    <div class="card"><div class="n" style="color:var(--bad)">{{ m.invalid }}</div><div class="l">Inválidas (cuarentena)</div></div>
+    <div class="card"><div class="n" style="color:var(--warn)">{{ m.needs_review }}</div><div class="l">Requieren revisión</div></div>
+    {% for s, n in m.by_status.items() %}
+      <div class="card"><div class="n">{{ n }}</div><div class="l"><span class="badge {{ s }}">{{ s }}</span></div></div>
+    {% endfor %}
+  </div>
+
+  <div class="two">
+    <div class="card">
+      <h2>Totales por moneda (solo válidas)</h2>
+      <table>
+        <tr><th>Moneda</th><th class="num">Cant.</th><th class="num">Total</th><th class="num">Solo SUCCESS</th></tr>
+        {% for cur, v in m.by_currency.items() %}
+          <tr><td>{{ cur }}</td><td class="num">{{ v.count }}</td><td class="num">{{ v.total_all|money(rules.supported_currencies[cur]) }}</td><td class="num">{{ v.total_success|money(rules.supported_currencies[cur]) }}</td></tr>
+        {% else %}<tr><td colspan="4" class="muted">Sin datos válidos</td></tr>{% endfor %}
+      </table>
+    </div>
+    <div class="card">
+      <h2>Por fuente y motivos de invalidez</h2>
+      <table>
+        <tr><th>Fuente</th><th class="num">Válidas</th><th class="num">Inválidas</th></tr>
+        {% for s, v in m.by_source.items() %}
+          <tr><td>{{ s }}</td><td class="num">{{ v.valid }}</td><td class="num">{{ v.invalid }}</td></tr>
+        {% endfor %}
+      </table>
+      {% if m.invalid_reasons %}
+        <p style="margin:10px 0 0">
+        {% for code, n in m.invalid_reasons.items() %}<span class="code">{{ code }}: {{ n }}</span> {% endfor %}
+        </p>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="tabs">
+    <a class="{{ 'active' if view == 'valid' }}" href="{{ url_for('index', dataset=dataset, view='valid') }}">Válidas ({{ m.valid }})</a>
+    <a class="{{ 'active' if view == 'invalid' }}" href="{{ url_for('index', dataset=dataset, view='invalid') }}">Inválidas ({{ m.invalid }})</a>
+    <a class="{{ 'active' if view == 'audit' }}" href="{{ url_for('index', dataset=dataset, view='audit') }}">Auditoría ({{ audit|length }})</a>
+  </div>
+
+  <form method="get" class="filters">
+    <input type="hidden" name="dataset" value="{{ dataset }}">
+    <input type="hidden" name="view" value="{{ view }}">
+    {% if view == 'valid' %}
+      <label>Buscar ID<input name="q" value="{{ args.get('q','') }}" placeholder="tx_00…"></label>
+      <label>Estado
+        <select name="status"><option value="">Todos</option>
+          {% for s in m.by_status %}<option {{ 'selected' if args.get('status')==s }}>{{ s }}</option>{% endfor %}
+        </select></label>
+      <label>Moneda
+        <select name="currency"><option value="">Todas</option>
+          {% for c in m.by_currency %}<option {{ 'selected' if args.get('currency')==c }}>{{ c }}</option>{% endfor %}
+        </select></label>
+      <label>Fuente
+        <select name="source"><option value="">Todas</option>
+          {% for s in m.by_source %}<option {{ 'selected' if args.get('source')==s }}>{{ s }}</option>{% endfor %}
+        </select></label>
+      <label>Desde<input type="date" name="date_from" value="{{ args.get('date_from','') }}"></label>
+      <label>Hasta<input type="date" name="date_to" value="{{ args.get('date_to','') }}"></label>
+      <label>Monto mín.<input name="min_amount" size="7" value="{{ args.get('min_amount','') }}"></label>
+      <label>Monto máx.<input name="max_amount" size="7" value="{{ args.get('max_amount','') }}"></label>
+      <label>Revisión
+        <select name="review"><option value="">Todas</option><option value="1" {{ 'selected' if args.get('review')=='1' }}>Solo REQUIERE_REVISION</option></select></label>
+      <label>Ordenar
+        <select name="sort">
+          {% for k, label in [('date_desc','Fecha ↓'),('date_asc','Fecha ↑'),('amount_desc','Monto ↓'),('amount_asc','Monto ↑')] %}
+            <option value="{{ k }}" {{ 'selected' if args.get('sort','date_desc')==k }}>{{ label }}</option>
+          {% endfor %}
+        </select></label>
+    {% elif view == 'invalid' %}
+      <label>Fuente
+        <select name="source"><option value="">Todas</option>
+          {% for s in m.by_source %}<option {{ 'selected' if args.get('source')==s }}>{{ s }}</option>{% endfor %}
+          <option {{ 'selected' if args.get('source')=='desconocida' }}>desconocida</option>
+        </select></label>
+      <label>Motivo
+        <select name="code"><option value="">Todos</option>
+          {% for c in m.invalid_reasons %}<option {{ 'selected' if args.get('code')==c }}>{{ c }}</option>{% endfor %}
+        </select></label>
+    {% endif %}
+    {% if view != 'audit' %}<button type="submit">Filtrar</button>{% endif %}
+    {% if view != 'audit' %}<a class="btn ghost" href="{{ url_for('index', dataset=dataset, view=view) }}">Limpiar</a>{% endif %}
+    {% if view == 'audit' %}<a class="btn ghost" href="{{ url_for('api_audit', dataset=dataset) }}" target="_blank">Ver JSON de auditoría</a>{% endif %}
+    {% if view == 'valid' %}
+      <a class="btn ghost" href="{{ url_for('api_transactions', **args) }}" target="_blank">Exportar JSON</a>
+    {% endif %}
+  </form>
+
+  <p class="muted">{{ rows|length }} resultado(s)</p>
+  <div class="card wrap">
+  {% if view == 'valid' %}
+    <table>
+      <tr><th>ID</th><th class="num">Monto</th><th>Moneda</th><th>Fecha (UTC)</th><th>Estado</th><th>Fuente</th><th>Revisión</th></tr>
+      {% for t in rows %}
+        {% set d = rules.supported_currencies[t.currency] %}
+        <tr><td>{{ t.id }}</td><td class="num">{{ t.amount|money(d) }}</td><td>{{ t.currency }}</td>
+            <td>{{ t.timestamp }}</td><td><span class="badge {{ t.status }}">{{ t.status }}</span></td><td>{{ t.source }}</td>
+            <td>{% for f in t.flags %}<span class="badge PENDING" title="Monto original: {{ t.original_amount }}">{{ f }}</span> <span class="muted">orig. {{ t.original_amount }}</span>{% endfor %}</td></tr>
+      {% else %}<tr><td colspan="7" class="muted">Ninguna transacción coincide con los filtros.</td></tr>{% endfor %}
+    </table>
+  {% elif view == 'audit' %}
+    <table>
+      <tr><th>#</th><th>ID</th><th>Fuente</th><th>Acción</th><th>Moneda</th><th class="num">Monto original</th><th class="num">Monto ajustado</th><th>Regla</th></tr>
+      {% for e in rows %}
+        <tr><td>{{ e.index }}</td><td>{{ e.id }}</td><td>{{ e.source }}</td><td><span class="code">{{ e.action }}</span></td><td>{{ e.currency }}</td>
+            <td class="num">{{ e.original_amount }}</td><td class="num">{{ e.adjusted_amount }}</td><td>{{ e.rule }}</td></tr>
+      {% else %}<tr><td colspan="8" class="muted">No se aplicó ningún ajuste en este dataset.</td></tr>{% endfor %}
+    </table>
+  {% else %}
+    <table>
+      <tr><th>#</th><th>Fuente</th><th>Motivos</th><th>Registro original</th></tr>
+      {% for r in rows %}
+        <tr><td>{{ r.index }}</td><td>{{ r.source }}</td>
+            <td>{% for i in r.issues %}<div><span class="code">{{ i.code }}</span> {{ i.message }}</div>{% endfor %}</td>
+            <td><pre>{{ r.raw|pretty }}</pre></td></tr>
+      {% else %}<tr><td colspan="4" class="muted">No hay registros inválidos con estos filtros.</td></tr>{% endfor %}
+    </table>
+  {% endif %}
+  </div>
+{% endif %}
+</main>
+</body>
+</html>
