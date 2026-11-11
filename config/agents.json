@@ -1,0 +1,42 @@
+{
+  "_comentario": "PERSONALIZACION DE AGENTES: rol, skills permitidos, intents (palabras clave -> skills) y valores por defecto. Sin tocar codigo.",
+  "nlu": {
+    "status_stems": {
+      "SUCCESS": ["exitos", "success", "complet", "aprobad"],
+      "FAILED": ["fallid", "failed", "rechazad", "declin"],
+      "PENDING": ["pendient", "pending", "procesand"]
+    }
+  },
+  "agents": {
+    "auditor": {
+      "name": "Auditor de Calidad de Datos",
+      "description": "Evalua la calidad de un dataset, explica los rechazos y muestra los ajustes aplicados.",
+      "system_prompt": "Eres un auditor de calidad de datos financieros. Eres estricto, preciso y siempre explicas el motivo de cada rechazo. No consultas transacciones individuales ni calculas totales de negocio.",
+      "skills": ["list_datasets", "ingest_dataset", "quality_report", "explain_invalid", "audit_trail", "metrics_summary"],
+      "default_dataset": "transactions_mixed.json",
+      "skill_defaults": {"explain_invalid": {"examples": 2}},
+      "intents": [
+        {"name": "datasets", "keywords": ["datasets", "archivos disponibles", "que datos"], "steps": [{"skill": "list_datasets"}]},
+        {"name": "invalidos", "keywords": ["invalid", "cuarentena", "motivo", "por que", "error", "rechaz", "problema"], "steps": [{"skill": "explain_invalid"}]},
+        {"name": "auditoria", "keywords": ["audit", "redondeo", "ajuste"], "steps": [{"skill": "audit_trail"}]},
+        {"name": "metricas", "keywords": ["metrica", "totales", "estadistica"], "steps": [{"skill": "metrics_summary"}]},
+        {"name": "calidad", "keywords": ["calidad", "reporte", "informe", "resumen", "diagnostico", "evalua"], "steps": [{"skill": "quality_report"}, {"skill": "audit_trail"}]}
+      ],
+      "fallback_message": "No entendi la solicitud. Puedo: evaluar la calidad de un dataset, explicar los registros invalidos, mostrar los ajustes de auditoria o listar datasets."
+    },
+    "analyst": {
+      "name": "Analista de Transacciones",
+      "description": "Consulta y resume las transacciones validas (filtros, totales por moneda).",
+      "system_prompt": "Eres un analista de transacciones. Respondes con datos concretos del dataset cargado. No evaluas la calidad de los datos de origen.",
+      "skills": ["list_datasets", "ingest_dataset", "query_transactions", "metrics_summary"],
+      "default_dataset": "transactions_valid.json",
+      "skill_defaults": {"query_transactions": {"limit": 5}},
+      "intents": [
+        {"name": "datasets", "keywords": ["datasets", "archivos disponibles", "que datos"], "steps": [{"skill": "list_datasets"}]},
+        {"name": "metricas", "keywords": ["cuanto", "total", "metrica", "estadistica", "resumen"], "steps": [{"skill": "metrics_summary"}]},
+        {"name": "consulta", "keywords": ["transaccion", "muestra", "mostrar", "lista", "buscar", "filtr", "mayor", "menor", "fallid", "pendient", "exitos", "revision"], "steps": [{"skill": "query_transactions"}]}
+      ],
+      "fallback_message": "No entendi la solicitud. Puedo: mostrar transacciones filtradas (por estado, moneda, fuente, monto), dar totales por moneda o listar datasets."
+    }
+  }
+}

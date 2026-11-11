@@ -1,0 +1,19 @@
+{
+  "_comentario": "Comportamiento de los skills (umbrales, textos de remediacion, limites). Se edita aqui, no en el codigo.",
+  "default_limit": 10,
+  "quality_thresholds": {"good": 90, "warning": 70},
+  "remediation_hints": {
+    "MISSING_FIELD": "Pedir al gateway que reenvie el registro con todos los campos obligatorios.",
+    "BAD_AMOUNT": "Revisar el formato del monto en origen (texto no numerico, unidades menores no enteras o demasiados decimales).",
+    "BAD_CURRENCY": "La moneda debe ser un codigo ISO 4217 de 3 letras.",
+    "CURRENCY_MISMATCH": "El simbolo del monto contradice la moneda declarada; confirmar cual es la correcta.",
+    "UNSUPPORTED_CURRENCY": "Agregar la moneda a supported_currencies en config/rules.json si es legitima.",
+    "BAD_STATUS": "Agregar el alias de estado a status_mapping en config/rules.json si es legitimo.",
+    "BAD_DATE": "El formato de fecha no coincide con date_formats de la fuente (ej. dd/mm vs mm/dd).",
+    "FUTURE_DATE": "Posible error de reloj o de zona horaria en el origen.",
+    "DUPLICATE": "Se conserva la primera aparicion; confirmar con la fuente que no sea un reintento legitimo.",
+    "UNKNOWN_SOURCE": "El registro no tiene ningun campo identificador conocido; registrar una nueva fuente en rules.json.",
+    "AMOUNT_OUT_OF_RANGE": "El monto es <= 0 o supera validation.max_amount; verificar con negocio."
+  },
+  "extra_skill_modules": []
+}

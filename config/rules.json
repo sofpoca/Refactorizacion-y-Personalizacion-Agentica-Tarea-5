@@ -1,0 +1,145 @@
+{
+  "_comentario": "DECISIONES DEL ESTUDIANTE: esquema, reglas de normalizacion y criterios de validez viven aqui, no en el codigo.",
+  "schema_version": "1.0",
+  "supported_currencies": {
+    "USD": 2,
+    "EUR": 2,
+    "GBP": 2,
+    "JPY": 0,
+    "CNY": 2,
+    "CAD": 2,
+    "AUD": 2,
+    "CHF": 2,
+    "MXN": 2,
+    "BRL": 2,
+    "COP": 2,
+    "CLP": 0,
+    "ARS": 2,
+    "CRC": 2,
+    "GTQ": 2,
+    "HNL": 2,
+    "NIO": 2,
+    "KWD": 3,
+    "BHD": 3,
+    "OMR": 3,
+    "JOD": 3,
+    "TND": 3,
+    "IQD": 3,
+    "LYD": 3,
+    "BIF": 0,
+    "CLF": 4,
+    "XAF": 0,
+    "XOF": 0,
+    "XPF": 0,
+    "KRW": 0,
+    "VND": 0,
+    "ISK": 0,
+    "PYG": 0,
+    "UGX": 0,
+    "RWF": 0,
+    "DJF": 0,
+    "GNF": 0,
+    "MGA": 2,
+    "MRU": 2,
+    "MRO": 1,
+    "UYI": 0,
+    "UYW": 4
+  },
+  "rounding": {
+    "_comentario": "Si el monto trae mas decimales que la moneda pero <= max_input_decimals (o los propios de la moneda, si son mas, ej. CLF=4): se redondea, se guarda el original, se marca y se audita. Si trae mas: invalido.",
+    "mode": "ROUND_HALF_UP",
+    "max_input_decimals": 3,
+    "review_flag": "REQUIERE_REVISION"
+  },
+  "currency_symbols": {
+    "$": "USD",
+    "€": "EUR",
+    "£": "GBP"
+  },
+  "status_mapping": {
+    "SUCCESS": [
+      "completed",
+      "ok",
+      "success",
+      "succeeded",
+      "paid",
+      "approved"
+    ],
+    "FAILED": [
+      "failed",
+      "error",
+      "declined",
+      "rejected",
+      "cancelled",
+      "canceled"
+    ],
+    "PENDING": [
+      "pending",
+      "processing",
+      "in_progress",
+      "waiting"
+    ]
+  },
+  "sources": {
+    "gateway_a": {
+      "marker": "id",
+      "fields": {
+        "id": "id",
+        "amount": "amount",
+        "currency": "currency",
+        "timestamp": "timestamp",
+        "status": "status"
+      },
+      "amount_format": "decimal_string",
+      "currency_from_symbol": false,
+      "date_formats": [
+        "%Y-%m-%d %H:%M:%S",
+        "%Y-%m-%d %H:%M",
+        "ISO8601"
+      ]
+    },
+    "gateway_b": {
+      "marker": "transaction_id",
+      "fields": {
+        "id": "transaction_id",
+        "amount": "total",
+        "currency": "currency_code",
+        "timestamp": "created_at",
+        "status": "state"
+      },
+      "amount_format": "minor_units",
+      "currency_from_symbol": false,
+      "date_formats": [
+        "%d/%m/%Y %H:%M",
+        "%d/%m/%Y %H:%M:%S"
+      ]
+    },
+    "gateway_c": {
+      "marker": "ref",
+      "fields": {
+        "id": "ref",
+        "amount": "amount",
+        "currency": null,
+        "timestamp": "date",
+        "status": "result"
+      },
+      "amount_format": "decimal_string",
+      "currency_from_symbol": true,
+      "date_formats": [
+        "ISO8601"
+      ]
+    }
+  },
+  "validation": {
+    "min_amount_exclusive": 0,
+    "max_amount": 1000000,
+    "reject_future_timestamps": true,
+    "reject_duplicates": true
+  },
+  "notes": {
+    "naive_timestamps": "Fechas sin zona horaria se asumen UTC.",
+    "invalid_policy": "Los registros invalidos NO se descartan: se separan en una cuarentena con su motivo.",
+    "minor_units": "gateway_b envia el total como entero en unidades menores (10050 = 100.50).",
+    "rounding_policy": "Redondeo ROUND_HALF_UP; el estado (SUCCESS/FAILED/PENDING) no cambia, se agrega la marca REQUIERE_REVISION y una entrada de auditoria."
+  }
+}
