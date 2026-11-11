@@ -122,7 +122,7 @@ Cambios hechos por el estudiante a las propuestas iniciales de la IA:
 Se mantuvieron: invalidar montos <= 0, rechazar estados desconocidos, enviar duplicados a cuarentena y usar UTC.
 Validación: 7 pruebas en `tests/` y dos archivos de datos (uno limpio y uno con inconsistencias).
 
-### 6.2 Esta actividad (refactorización agéntica)
+### 6.2 Refactorización agéntica
 Se usó **Copilot y claude** como asistentes para proponer la arquitectura (servicio, skills, agentes) y generar el código.
 Aporte y verificación del estudiante: el diagnóstico se hizo sobre su propio proyecto, el núcleo del pipeline no se
 modificó, y todo se validó ejecutando las pruebas originales (7) más las nuevas (16): 23/23 en verde.
